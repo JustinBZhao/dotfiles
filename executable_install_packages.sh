@@ -25,6 +25,7 @@ PACKAGES=(
     unzip
     vim
     zip
+    zsh
 )
 
 UBUNTU_ONLY_PACKAGES=(
@@ -47,3 +48,18 @@ echo "------------------------------------"
 echo "Installing general packages..."
 sudo apt install ${PACKAGES[@]}
 echo "Package installation complete!"
+
+# Install Oh my Zsh
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "------------------------------------------------"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
+    echo "------------------------------------------------"
+fi
+
+# Install zsh-syntax-highlighting
+ZSH_HIGHLIGHT_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
+    echo "Installing zsh syntax highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
+    echo "zsh syntax highlighting installed!"
+fi
