@@ -22,6 +22,7 @@ PACKAGES=(
     python3-pandas
     python3-pytest
     snapd
+    tldr
     unzip
     vim
     zip
@@ -47,6 +48,7 @@ echo "------------------------------------"
 # Then install general packages
 echo "Installing general packages..."
 sudo apt install ${PACKAGES[@]}
+chsh -s $(which zsh) # it looks like setting default shell might not always succeed
 echo "Package installation complete!"
 
 # Install Oh my Zsh
