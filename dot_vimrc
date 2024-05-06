@@ -87,3 +87,10 @@ set softtabstop=4
 set autoindent
 set smartindent
 filetype plugin indent on
+
+" The section about vim plugin (vim-plug)
+call plug#begin("~/.vim/plugged")
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+call plug#end()
+

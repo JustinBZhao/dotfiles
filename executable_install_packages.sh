@@ -65,3 +65,11 @@ if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
     echo "zsh syntax highlighting installed!"
 fi
+
+# Install vim-plug
+if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
+    echo "Installing vim-plug..."
+    curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs \
+        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    echo "vim-plug installation finished!"
+fi
