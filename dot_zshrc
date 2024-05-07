@@ -99,3 +99,8 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# Add /snap/bin if not already in PATH
+if [[ ":$PATH:" != *":/snap/bin:"* ]]; then
+    export PATH="$PATH:/snap/bin"
+fi

@@ -72,4 +72,5 @@ if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
     curl -fLo $HOME/.vim/autoload/plug.vim --create-dirs \
         https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     echo "vim-plug installation finished!"
+    vim -c "PlugInstall" -c "qa" # execute 'PlugInstall' in Vim
 fi
