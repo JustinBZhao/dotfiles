@@ -103,4 +103,8 @@ if [ ! -f "$vim_plug_dir" ]; then
     echo "vim-plug installation finished!"
     vim -c "PlugInstall" -c "qa" # execute 'PlugInstall' in Vim
     echo "------------------------------------"
+else
+    vim -c "PlugInstall" -c "qa" # install plugins
+    echo "Plugins updated successfully!"
+    echo "------------------------------------"
 fi

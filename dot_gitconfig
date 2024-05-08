@@ -1,8 +1,12 @@
 [user]
 	name = Justin Zhao
 	email = zhaoboqin58@gmail.com
+[init]
+    defaultBranch = master
 [core]
+    editor = vim
 	longpaths = true
+    pager = delta
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
