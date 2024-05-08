@@ -8,6 +8,18 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
+command_exists() {
+    command -v "$@" >/dev/null 2>&1
+}
+
+install_package() {
+    package=$1
+    if ! dpkg -s "$package" >/dev/null 2>&1; then
+        echo "Installing $package..."
+        sudo apt install -y "$package" || { echo "Failed to install $package"; exit 1; }
+    fi
+}
+
 PACKAGES=(
     build-essential
     curl
@@ -48,25 +60,30 @@ if [ -n "$WSL_DISTRO_NAME" ]; then
     echo "This is a WSL installation. Skipping some packages."
 else
     echo "This is a full installation. Install specific packages."
-    sudo apt install "${UBUNTU_ONLY_PACKAGES[@]}"
+    for package in "${UBUNTU_ONLY_PACKAGES[@]}"; do
+        install_package "$package"
+    done
 fi
 echo "------------------------------------"
 # Then install general packages
 echo "Installing general packages..."
-sudo apt install "${PACKAGES[@]}"
-# Change default shell to zsh
-if command -v chsh >/dev/null 2>&1; then
-    chsh -s $(which zsh) || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
-else
-    echo "chsh command not found, cannot change default shell to zsh!"
-fi
+for package in "${PACKAGES[@]}"; do
+    install_package "$package"
+done
 echo "Package installation complete!"
+echo "------------------------------------"
 
 # Install Oh my Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    echo "------------------------------------------------"
+    export RUNZSH=no # prevent running zsh after installation
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
-    echo "------------------------------------------------"
+    # Change default shell to zsh
+    if command_exists chsh; then
+        chsh -s $(which zsh) || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
+    else
+        echo "chsh command not found, cannot change default shell to zsh!"
+    fi
+    echo "------------------------------------"
 fi
 
 # Install zsh-syntax-highlighting
@@ -75,14 +92,15 @@ if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
     echo "Installing zsh syntax highlighting..."
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
     echo "zsh syntax highlighting installed!"
+    echo "------------------------------------"
 fi
 
 # Install vim-plug
 vim_plug_dir="$HOME/.vim/autoload/plug.vim"
 if [ ! -f "$vim_plug_dir" ]; then
     echo "Installing vim-plug..."
-    curl -fLo "$vim_plug_dir" --create-dirs \
-        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    curl -fLo "$vim_plug_dir" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     echo "vim-plug installation finished!"
     vim -c "PlugInstall" -c "qa" # execute 'PlugInstall' in Vim
+    echo "------------------------------------"
 fi
