@@ -120,3 +120,7 @@ fi
 if [[ ":$PATH:" != *":/snap/bin:"* ]]; then
     export PATH="$PATH:/snap/bin"
 fi
+# Add ~/.local/bin if not already in PATH
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$PATH:$HOME/.local/bin"
+fi

@@ -21,6 +21,7 @@ install_package() {
 }
 
 PACKAGES=(
+    bat
     build-essential
     curl
     dash
@@ -29,6 +30,7 @@ PACKAGES=(
     gdb
     gh
     git
+    git-delta
     grep
     gzip
     hostname
@@ -107,4 +109,10 @@ else
     vim -c "PlugInstall" -c "qa" # install plugins
     echo "Plugins updated successfully!"
     echo "------------------------------------"
+fi
+
+# Create symlink for "bat"
+if [ -f "/usr/bin/batcat" ] && [ ! -f "$HOME/.local/bin/bat" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -s /usr/bin/batcat "$HOME/.local/bin/bat"
 fi
