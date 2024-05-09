@@ -23,6 +23,7 @@ install_package() {
 PACKAGES=(
     bat
     build-essential
+    cmake
     curl
     dash
     diffutils
@@ -44,6 +45,7 @@ PACKAGES=(
     snapd
     tldr
     unzip
+    valgrind
     vim
     zip
     zsh
