@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 #
 # Set up most of the packages and plugins
+set -euo pipefail
 
+# Check bash version, should >=4.2, otherwise abort
+if (( BASH_VERSINFO[0] < 4 )); then
+    echo "Bash version too low! Must be at least 4.2!"
+    exit 1
+fi
+if (( BASH_VERSINFO[0] == 4 )) && (( BASH_VERSINFO[1] < 2 )); then
+    echo "Bash version too low! Must be at least 4.2!"
+    exit 1
+fi
 # Reject execution if run as root
 if [ "$(id -u)" -eq 0 ]; then
     echo "This script cannot be run as root! Abort."
@@ -42,6 +52,7 @@ PACKAGES=(
     python3-numpy
     python3-pandas
     python3-pytest
+    shellcheck
     snapd
     tldr
     unzip
@@ -60,7 +71,7 @@ sudo apt update && sudo apt upgrade || { echo "Failed to update package lists!";
 # First check if this is a WSL installation
 # Only install specific packages on full Ubuntu distribution
 echo "------------------------------------"
-if [ -n "$WSL_DISTRO_NAME" ]; then
+if [ -v WSL_DISTRO_NAME ]; then
     echo "This is a WSL installation. Skipping some packages."
 else
     echo "This is a full installation. Install specific packages."

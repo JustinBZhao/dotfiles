@@ -93,5 +93,10 @@ call plug#begin("~/.vim/plugged")
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'tpope/vim-fugitive'
+Plug 'dense-analysis/ale'
 call plug#end()
 
+" Enable shellcheck through ALE
+let g:ale_linters = {
+            \ 'sh': ['shellcheck'],
+            \}
