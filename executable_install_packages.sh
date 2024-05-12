@@ -34,7 +34,9 @@ PACKAGES=(
     bat
     build-essential
     clang
+    clang-tidy
     cmake
+    cppcheck
     curl
     dash
     diffutils
