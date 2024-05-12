@@ -33,6 +33,7 @@ install_package() {
 PACKAGES=(
     bat
     build-essential
+    clang
     cmake
     curl
     dash
@@ -67,7 +68,8 @@ UBUNTU_ONLY_PACKAGES=(
 )
 
 # Installation command
-sudo apt update && sudo apt upgrade || { echo "Failed to update package lists!"; exit 1; }
+sudo apt update || { echo "Failed to update package lists!"; exit 1; }
+sudo apt upgrade || { echo "Failed to upgrade packages!"; exit 1; }
 # First check if this is a WSL installation
 # Only install specific packages on full Ubuntu distribution
 echo "------------------------------------"
@@ -94,7 +96,7 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
     # Change default shell to zsh
     if command_exists chsh; then
-        chsh -s $(which zsh) || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
+        chsh -s "$(which zsh)" || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
     else
         echo "chsh command not found, cannot change default shell to zsh!"
     fi
