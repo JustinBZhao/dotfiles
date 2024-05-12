@@ -58,7 +58,7 @@ PACKAGES=(
     tldr
     unzip
     valgrind
-    vim
+    vim-gtk3
     zip
     zsh
 )
