@@ -3,6 +3,15 @@
 # Set up most of the packages and plugins
 set -euo pipefail
 
+# OS must be Ubuntu
+OS_NAME=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
+echo "$OS_NAME"
+if [ "$OS_NAME" == "Ubuntu" ]; then
+    echo "This is Ubuntu!"
+elif [ "$OS_NAME" != "Ubuntu" ]; then
+    echo "This is NOT Ubuntu!"
+    exit 1
+fi
 # Check bash version, should >=4.2, otherwise abort
 if (( BASH_VERSINFO[0] < 4 )); then
     echo "Bash version too low! Must be at least 4.2!"
@@ -44,7 +53,6 @@ PACKAGES=(
     gdb
     gh
     git
-    git-delta
     grep
     gzip
     hostname
@@ -64,6 +72,10 @@ PACKAGES=(
     vim-gtk3
     zip
     zsh
+)
+
+UBUNTU_2404_PACKAGES=(
+    git-delta
 )
 
 UBUNTU_ONLY_PACKAGES=(
@@ -91,6 +103,17 @@ for package in "${PACKAGES[@]}"; do
     install_package "$package"
 done
 echo "Package installation complete!"
+echo "------------------------------------"
+# Then install Ubuntu 24.04 specific packages
+OS_VERSION=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
+if [ "$OS_VERSION" == "24.04" ]; then
+    echo "Install Ubuntu 24.04 specific packages..."
+    for package in "${UBUNTU_2404_PACKAGES[@]}"; do
+        install_package "$package"
+    done
+else
+    echo "This is an older Ubuntu version: ${OS_VERSION}. Skip installing version specific packages."
+fi
 echo "------------------------------------"
 
 # Install Oh my Zsh
