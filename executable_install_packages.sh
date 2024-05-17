@@ -5,9 +5,8 @@ set -euo pipefail
 
 # OS must be Ubuntu
 OS_NAME=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
-echo "$OS_NAME"
 if [ "$OS_NAME" == "Ubuntu" ]; then
-    echo "This is Ubuntu!"
+    echo "This is Ubuntu! Proceed with installation."
 elif [ "$OS_NAME" != "Ubuntu" ]; then
     echo "This is NOT Ubuntu!"
     exit 1
@@ -58,6 +57,8 @@ PACKAGES=(
     hostname
     init
     ninja-build
+    nodejs
+    npm
     python-is-python3
     python3-matplotlib
     python3-notebook
@@ -145,12 +146,12 @@ if [ ! -f "$vim_plug_dir" ]; then
     curl -fLo "$vim_plug_dir" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     echo "vim-plug installation finished!"
     vim -c "PlugInstall" -c "qa" # execute 'PlugInstall' in Vim
-    echo "------------------------------------"
 else
     vim -c "PlugInstall" -c "qa" # install plugins
     echo "Plugins updated successfully!"
-    echo "------------------------------------"
 fi
+vim -c "CocInstall -sync coc-cmake|qa" # need to use -sync to prevent closing vim too soon
+echo "------------------------------------"
 
 # Create symlink for "bat"
 if [ -f "/usr/bin/batcat" ] && [ ! -f "$HOME/.local/bin/bat" ]; then
