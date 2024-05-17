@@ -109,3 +109,6 @@ inoremap <silent><expr> <C-p> coc#pum#visible() ? coc#pum#prev(1) : "\<C-p>"
 
 " Press Tab to auto-complete
 inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#confirm() : "\<Tab>"
+
+" Set Coc auto-complete drop-down menu color
+highlight CocFloating ctermbg=253 ctermfg=16
