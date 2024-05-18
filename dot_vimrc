@@ -99,8 +99,9 @@ call plug#end()
 
 " Set ALE options fomr C++ linters
 let g:ale_cpp_cc_options = '-std=c++23 -Wall -Wextra -Wpedantic -Wconversion'
-let g:ale_cpp_clangtidy_options = '--std=c++23'
+let g:ale_cpp_clangtidy_extra_options = '--std=c++23'
 let g:ale_cpp_cppcheck_options = '--enable=all --std=c++23 --suppress=missingIncludeSystem'
+let g:ale_linters = {'sh': ['shellcheck'], 'cpp':[]}
 
 " Coc key mappings
 " List navigation: Ctrl-n down, Ctrl-p up
