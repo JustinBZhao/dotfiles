@@ -95,13 +95,23 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'tpope/vim-fugitive'
 Plug 'dense-analysis/ale'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'morhetz/gruvbox'
+Plug 'jiangmiao/auto-pairs'
 call plug#end()
+
+" Set to use gruvbox color scheme
+let g:gruvbox_italic=1
+set background=dark
+colorscheme gruvbox
 
 " Set ALE options fomr C++ linters
 let g:ale_cpp_cc_options = '-std=c++23 -Wall -Wextra -Wpedantic -Wconversion'
 let g:ale_cpp_clangtidy_extra_options = '--std=c++23'
 let g:ale_cpp_cppcheck_options = '--enable=all --std=c++23 --suppress=missingIncludeSystem'
 let g:ale_linters = {'sh': ['shellcheck'], 'cpp':[]}
+
+" Coc extensions settings
+let g:coc_global_extensions = ['coc-json', 'coc-clangd', 'coc-cmake']
 
 " Coc key mappings
 " List navigation: Ctrl-n down, Ctrl-p up
@@ -110,6 +120,3 @@ inoremap <silent><expr> <C-p> coc#pum#visible() ? coc#pum#prev(1) : "\<C-p>"
 
 " Press Tab to auto-complete
 inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#confirm() : "\<Tab>"
-
-" Set Coc auto-complete drop-down menu color
-highlight CocFloating ctermbg=253 ctermfg=16

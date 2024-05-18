@@ -151,8 +151,6 @@ else
     vim -c "PlugInstall" -c "qa" # install plugins
     echo "Plugins updated successfully!"
 fi
-vim -c "CocInstall -sync coc-cmake|qa" # need to use -sync to prevent closing vim too soon
-vim -c "CocInstall -sync coc-clangd|qa" # need to use -sync to prevent closing vim too soon
 echo "------------------------------------"
 
 # Create symlink for "bat"
