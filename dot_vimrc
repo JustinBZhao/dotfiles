@@ -111,7 +111,7 @@ let g:ale_cpp_cppcheck_options = '--enable=all --std=c++23 --suppress=missingInc
 let g:ale_linters = {'sh': ['shellcheck'], 'cpp':[]}
 
 " Coc extensions settings
-let g:coc_global_extensions = ['coc-json', 'coc-clangd', 'coc-cmake']
+let g:coc_global_extensions = ['coc-json', 'coc-clangd', 'coc-cmake', 'coc-pyright']
 
 " Coc key mappings
 " List navigation: Ctrl-n down, Ctrl-p up
