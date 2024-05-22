@@ -114,6 +114,11 @@ let g:ale_linters = {'sh': ['shellcheck'], 'cpp':[]}
 " Coc extensions settings
 let g:coc_global_extensions = ['coc-json', 'coc-clangd', 'coc-cmake', 'coc-pyright']
 
+" Configure clangd server to use the latest C++ standard
+let g:coc_user_config = {
+            \ 'clangd.fallbackFlags': ['-std=c++23']
+            \}
+
 " Coc key mappings
 " List navigation: Ctrl-n down, Ctrl-p up
 inoremap <silent><expr> <C-n> coc#pum#visible() ? coc#pum#next(1) : "\<C-n>"
