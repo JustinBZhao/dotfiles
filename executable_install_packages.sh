@@ -3,14 +3,25 @@
 # Set up most of the packages and plugins
 set -euo pipefail
 
+command_exists() {
+    # Can give multiple commands, will fail if any command is not found
+    command -v "$@" >/dev/null 2>&1
+}
+
 # OS must be Ubuntu
-OS_NAME=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
-if [ "$OS_NAME" == "Ubuntu" ]; then
-    echo "This is Ubuntu! Proceed with installation."
-elif [ "$OS_NAME" != "Ubuntu" ]; then
-    echo "This is NOT Ubuntu!"
-    exit 1
-fi
+os_name=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"' | cut -d ' ' -f1)
+case "$os_name" in
+    Ubuntu)
+        echo "This is Ubuntu!"
+        package_manager_cmd="sudo apt install -y" ;;
+    Fedora)
+        echo "This is Fedora!"
+        echo "Limited support for now!"
+        package_manager_cmd="sudo dnf install -y" ;;
+    *)
+        echo "Unsupported Linux distribution!"
+        exit 1 ;;
+esac
 # Check bash version, should >=4.2, otherwise abort
 if (( BASH_VERSINFO[0] < 4 )); then
     echo "Bash version too low! Must be at least 4.2!"
@@ -26,15 +37,11 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-command_exists() {
-    command -v "$@" >/dev/null 2>&1
-}
-
 install_package() {
     package=$1
     if ! dpkg -s "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        sudo apt install -y "$package" || { echo "Failed to install $package"; exit 1; }
+        "${package_manager_cmd} ${package}" || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
@@ -76,12 +83,21 @@ PACKAGES=(
     zsh
 )
 
-UBUNTU_2404_PACKAGES=(
+ubuntu_2404_packages=(
     git-delta
 )
 
-UBUNTU_ONLY_PACKAGES=(
+fulldistro_only_packages=(
     tlp
+)
+
+FEDORA_PACKAGES=(
+    bat
+
+    gcc
+    gcc-c++
+    gdb
+    make
 )
 
 # Installation command
@@ -94,27 +110,30 @@ if [ -v WSL_DISTRO_NAME ]; then
     echo "This is a WSL installation. Skipping some packages."
 else
     echo "This is a full installation. Install specific packages."
-    for package in "${UBUNTU_ONLY_PACKAGES[@]}"; do
+    for package in "${fulldistro_only_packages[@]}"; do
         install_package "$package"
     done
 fi
 echo "------------------------------------"
 # Then install general packages
 echo "Installing general packages..."
-for package in "${PACKAGES[@]}"; do
+# for package in "${PACKAGES[@]}"; do
+#     install_package "$package"
+# done
+for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
     install_package "$package"
 done
 echo "Package installation complete!"
 echo "------------------------------------"
 # Then install Ubuntu 24.04 specific packages
-OS_VERSION=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
-if [ "$OS_VERSION" == "24.04" ]; then
+os_version=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
+if [ "$os_version" == "24.04" ]; then
     echo "Install Ubuntu 24.04 specific packages..."
-    for package in "${UBUNTU_2404_PACKAGES[@]}"; do
+    for package in "${ubuntu_2404_packages[@]}"; do
         install_package "$package"
     done
 else
-    echo "This is an older Ubuntu version: ${OS_VERSION}. Skip installing version specific packages."
+    echo "This is an older Ubuntu version: ${os_version}. Skip installing version specific packages."
 fi
 echo "------------------------------------"
 
@@ -132,10 +151,10 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
 fi
 
 # Install zsh-syntax-highlighting
-ZSH_HIGHLIGHT_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
-if [ ! -d "$ZSH_HIGHLIGHT_DIR" ]; then
+zsh_highlight_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+if [ ! -d "$zsh_highlight_dir" ]; then
     echo "Installing zsh syntax highlighting..."
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_HIGHLIGHT_DIR"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$zsh_highlight_dir"
     echo "zsh syntax highlighting installed!"
     echo "------------------------------------"
 fi
