@@ -12,16 +12,15 @@ command_exists() {
 os_name=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"' | cut -d ' ' -f1)
 case "$os_name" in
     Ubuntu)
-        echo "This is Ubuntu!"
-        package_manager_cmd="sudo apt install -y" ;;
+        echo "This is Ubuntu!" ;;
     Fedora)
         echo "This is Fedora!"
-        echo "Limited support for now!"
-        package_manager_cmd="sudo dnf install -y" ;;
+        echo "Limited support for now!" ;;
     *)
         echo "Unsupported Linux distribution!"
         exit 1 ;;
 esac
+
 # Check bash version, should >=4.2, otherwise abort
 if (( BASH_VERSINFO[0] < 4 )); then
     echo "Bash version too low! Must be at least 4.2!"
@@ -37,11 +36,19 @@ if [ "$(id -u)" -eq 0 ]; then
     exit 1
 fi
 
-install_package() {
+install_package_ubuntu() {
     package=$1
     if ! dpkg -s "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        "${package_manager_cmd} ${package}" || { echo "Failed to install $package"; exit 1; }
+        "sudo apt install -y ${package}" || { echo "Failed to install $package"; exit 1; }
+    fi
+}
+
+install_package_fedora() {
+    package=$1
+    if ! rpm -q "$package" >/dev/null 2>&1; then
+        echo "Installing $package..."
+        "sudo dnf install -y ${package}" || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
@@ -100,10 +107,19 @@ FEDORA_PACKAGES=(
     make
 )
 
-# Installation command
-sudo apt update || { echo "Failed to update package lists!"; exit 1; }
-sudo apt upgrade || { echo "Failed to upgrade packages!"; exit 1; }
-# First check if this is a WSL installation
+# Upgrade packages
+case "$os_name" in
+    Ubuntu)
+        sudo apt update || { echo "Failed to update package lists!"; exit 1; }
+        sudo apt upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
+    Fedora)
+        sudo dnf upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
+    *)
+        echo "Unsupported Linux distribution!"
+        exit 1 ;;
+esac
+
+# Check if this is a WSL installation
 # Only install specific packages on full Ubuntu distribution
 echo "------------------------------------"
 if [ -v WSL_DISTRO_NAME ]; then
@@ -111,26 +127,36 @@ if [ -v WSL_DISTRO_NAME ]; then
 else
     echo "This is a full installation. Install specific packages."
     for package in "${fulldistro_only_packages[@]}"; do
-        install_package "$package"
+        # This should also distinguish between Ubuntu and Fedora !!!!!!!!!!!!!!!!!!!!!!
+        install_package_ubuntu "$package"
     done
 fi
 echo "------------------------------------"
+
 # Then install general packages
 echo "Installing general packages..."
-# for package in "${PACKAGES[@]}"; do
-#     install_package "$package"
-# done
-for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
-    install_package "$package"
-done
+case "$os_name" in
+    Ubuntu)
+        for package in "${PACKAGES[@]}"; do
+            install_package_ubuntu "$package"
+        done ;;
+    Fedora)
+        for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
+            install_package_fedora "$package"
+        done ;;
+    *)
+        echo "Unsupported Linux distribution!"
+        exit 1 ;;
+esac
 echo "Package installation complete!"
 echo "------------------------------------"
+
 # Then install Ubuntu 24.04 specific packages
 os_version=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
 if [ "$os_version" == "24.04" ]; then
     echo "Install Ubuntu 24.04 specific packages..."
     for package in "${ubuntu_2404_packages[@]}"; do
-        install_package "$package"
+        install_package_ubuntu "$package"
     done
 else
     echo "This is an older Ubuntu version: ${os_version}. Skip installing version specific packages."
