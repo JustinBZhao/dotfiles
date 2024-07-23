@@ -40,7 +40,7 @@ install_package_ubuntu() {
     package=$1
     if ! dpkg -s "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        "sudo apt install -y ${package}" || { echo "Failed to install $package"; exit 1; }
+        sudo apt install -y ${package} || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
@@ -48,7 +48,7 @@ install_package_fedora() {
     package=$1
     if ! rpm -q "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        "sudo dnf install -y ${package}" || { echo "Failed to install $package"; exit 1; }
+        sudo dnf install -y ${package} || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
@@ -100,6 +100,34 @@ fulldistro_only_packages=(
 
 FEDORA_PACKAGES=(
     bat
+    clang
+    clang-tools-extra
+    cmake
+    cppcheck
+    curl
+    dash
+    diffutils
+    findutils
+    gh
+    git
+    grep
+    gzip
+    hostname
+    ninja-build
+    nodejs
+    python-unversioned-command
+    python3-matplotlib
+    python3-notebook
+    python3-numpy
+    python3-pandas
+    python3-pytest
+    shellcheck
+    tldr
+    unzip
+    valgrind
+    #gvim
+    zip
+    zsh
 
     gcc
     gcc-c++
