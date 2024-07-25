@@ -14,8 +14,7 @@ case "$os_name" in
     Ubuntu)
         echo "This is Ubuntu!" ;;
     Fedora)
-        echo "This is Fedora!"
-        echo "Limited support for now!" ;;
+        echo "This is Fedora!" ;;
     *)
         echo "Unsupported Linux distribution!"
         exit 1 ;;
@@ -47,8 +46,10 @@ install_package_ubuntu() {
 install_package_fedora() {
     package=$1
     if ! rpm -q "$package" >/dev/null 2>&1; then
-        echo "Installing $package..."
-        sudo dnf install -y ${package} || { echo "Failed to install $package"; exit 1; }
+        if ! dnf list --installed "$package" >/dev/null 2>&1; then
+            echo "Installing $package..."
+            sudo dnf install -y "$package" || { echo "Failed to install $package"; exit 1; }
+        fi
     fi
 }
 
@@ -125,10 +126,10 @@ FEDORA_PACKAGES=(
     tldr
     unzip
     valgrind
-    #gvim
+    vim-enhanced
     zip
     zsh
-
+    # build tools
     gcc
     gcc-c++
     gdb
@@ -155,8 +156,12 @@ if [ -v WSL_DISTRO_NAME ]; then
 else
     echo "This is a full installation. Install specific packages."
     for package in "${fulldistro_only_packages[@]}"; do
-        # This should also distinguish between Ubuntu and Fedora !!!!!!!!!!!!!!!!!!!!!!
-        install_package_ubuntu "$package"
+        case "$os_name" in
+            Ubuntu)
+                install_package_ubuntu "$package" ;;
+            Fedora)
+                install_package_fedora "$package" ;;
+        esac
     done
 fi
 echo "------------------------------------"
@@ -167,29 +172,28 @@ case "$os_name" in
     Ubuntu)
         for package in "${PACKAGES[@]}"; do
             install_package_ubuntu "$package"
-        done ;;
-    Fedora)
-        for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
-            install_package_fedora "$package"
-        done ;;
-    *)
-        echo "Unsupported Linux distribution!"
-        exit 1 ;;
-esac
-echo "Package installation complete!"
-echo "------------------------------------"
-
-# Then install Ubuntu 24.04 specific packages
-os_version=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
-if [ "$os_version" == "24.04" ]; then
-    echo "Install Ubuntu 24.04 specific packages..."
-    for package in "${ubuntu_2404_packages[@]}"; do
-        install_package_ubuntu "$package"
-    done
-else
-    echo "This is an older Ubuntu version: ${os_version}. Skip installing version specific packages."
-fi
-echo "------------------------------------"
+        done
+        echo "------------------------------------"
+        # Then install Ubuntu 24.04 specific packages
+        os_version=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
+        if [ "$os_version" == "24.04" ]; then
+            echo "Install Ubuntu 24.04 specific packages..."
+            for package in "${ubuntu_2404_packages[@]}"; do
+                install_package_ubuntu "$package"
+            done
+        else
+            echo "This is an older Ubuntu version: ${os_version}. Skip installing version specific packages."
+            fi ;;
+        Fedora)
+            for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
+                install_package_fedora "$package"
+            done ;;
+        *)
+            echo "Unsupported Linux distribution!"
+            exit 1 ;;
+    esac
+    echo "Package installation complete!"
+    echo "------------------------------------"
 
 # Install Oh my Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then

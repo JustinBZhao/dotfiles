@@ -82,6 +82,7 @@ source $ZSH/oh-my-zsh.sh
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
+export EDITOR='vim'
 # if [[ -n $SSH_CONNECTION ]]; then
 #   export EDITOR='vim'
 # else
@@ -107,4 +108,8 @@ fi
 # Add ~/.local/bin if not already in PATH
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$PATH:$HOME/.local/bin"
+fi
+# Add ~/bin if not already in PATH
+if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+    export PATH="$PATH:$HOME/bin"
 fi
