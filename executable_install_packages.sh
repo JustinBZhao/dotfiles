@@ -111,6 +111,7 @@ FEDORA_PACKAGES=(
     findutils
     gh
     git
+    git-delta
     grep
     gzip
     hostname
