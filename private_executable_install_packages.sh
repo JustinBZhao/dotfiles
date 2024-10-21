@@ -8,27 +8,37 @@ command_exists() {
     command -v "$@" >/dev/null 2>&1
 }
 
-# OS must be Ubuntu
-os_name=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"' | cut -d ' ' -f1)
-case "$os_name" in
-    Ubuntu)
-        echo "This is Ubuntu!" ;;
-    Fedora)
-        echo "This is Fedora!" ;;
-    *)
-        echo "Unsupported Linux distribution!"
-        exit 1 ;;
-esac
+# Find the OS name: Ubuntu, Fedora or Android
+# Could be android: os-release does not exist
+if [ ! -f "/etc/os-release" ]; then
+    echo "This is Android!"
+    os_name=Android
+else
+    os_name=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"' | cut -d ' ' -f1)
+    case "$os_name" in
+        Ubuntu)
+            echo "This is Ubuntu!" ;;
+        Fedora)
+            echo "This is Fedora!" ;;
+        *)
+            echo "Unsupported Linux distribution!"
+            exit 1 ;;
+    esac
+fi
 
 # Check bash version, should >=4.2, otherwise abort
-if (( BASH_VERSINFO[0] < 4 )); then
-    echo "Bash version too low! Must be at least 4.2!"
-    exit 1
+# This does not work on Android Termux. Therefore, skip for Android
+if [ "$os_name" != "Android" ]; then
+    if (( BASH_VERSINFO[0] < 4 )); then
+        echo "Bash version too low! Must be at least 4.2!"
+        exit 1
+    fi
+    if (( BASH_VERSINFO[0] == 4 )) && (( BASH_VERSINFO[1] < 2 )); then
+        echo "Bash version too low! Must be at least 4.2!"
+        exit 1
+    fi
 fi
-if (( BASH_VERSINFO[0] == 4 )) && (( BASH_VERSINFO[1] < 2 )); then
-    echo "Bash version too low! Must be at least 4.2!"
-    exit 1
-fi
+
 # Reject execution if run as root
 if [ "$(id -u)" -eq 0 ]; then
     echo "This script cannot be run as root! Abort."
@@ -50,6 +60,14 @@ install_package_fedora() {
             echo "Installing $package..."
             sudo dnf install -y "$package" || { echo "Failed to install $package"; exit 1; }
         fi
+    fi
+}
+
+install_package_android() {
+    package=$1
+    if ! dpkg -s "$package" >/dev/null 2>&1; then
+        echo "Installing $package..."
+        apt install -y ${package} || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
@@ -137,6 +155,47 @@ FEDORA_PACKAGES=(
     make
 )
 
+ANDROID_PACKAGES=(
+    bat
+    build-essential
+    clang
+    # clangd # no clangd
+    # clang-tidy # no clang-tidy
+    cmake
+    cppcheck
+    curl
+    dash
+    diffutils
+    findutils
+    gdb
+    gh
+    git
+    git-delta # originally ubuntu_2404 only
+    grep
+    gzip
+    # hostname # no hostname
+    # init
+    ninja # ninja-build is not the right name
+    nodejs
+    # npm # include in "nodejs"
+    # python-is-python # no need, "python" command already works
+    # Python packages: need to install through pip
+    # python3-matplotlib
+    # python3-notebook
+    # python3-numpy
+    # python3-pandas
+    # python3-pytest
+
+    # shellcheck # no shellcheck
+    # snapd
+    # tldr
+    unzip
+    # valgrind # unavailable in Andriod
+    vim # regular version of vim is fine for now
+    zip
+    zsh
+)
+
 # Upgrade packages
 case "$os_name" in
     Ubuntu)
@@ -144,6 +203,9 @@ case "$os_name" in
         sudo apt upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
     Fedora)
         sudo dnf upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
+    Android)
+        apt update || { echo "Failed to update package lists!"; exit 1; }
+        apt upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
     *)
         echo "Unsupported Linux distribution!"
         exit 1 ;;
@@ -189,6 +251,10 @@ case "$os_name" in
             for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
                 install_package_fedora "$package"
             done ;;
+        Android)
+            for package in "${ANDROID_PACKAGES[@]}"; do
+                install_package_android "$package"
+            done ;;
         *)
             echo "Unsupported Linux distribution!"
             exit 1 ;;
@@ -232,7 +298,10 @@ fi
 echo "------------------------------------"
 
 # Create symlink for "bat"
-if [ -f "/usr/bin/batcat" ] && [ ! -f "$HOME/.local/bin/bat" ]; then
-    mkdir -p "$HOME/.local/bin"
-    ln -s /usr/bin/batcat "$HOME/.local/bin/bat"
+# Not needed for Android Termux
+if [ "$os_name" != "Android" ]; then
+    if [ -f "/usr/bin/batcat" ] && [ ! -f "$HOME/.local/bin/bat" ]; then
+        mkdir -p "$HOME/.local/bin"
+        ln -s /usr/bin/batcat "$HOME/.local/bin/bat"
+    fi
 fi
