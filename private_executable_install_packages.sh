@@ -90,6 +90,7 @@ PACKAGES=(
     gzip
     hostname
     init
+    neovim
     ninja-build
     nodejs
     npm
@@ -133,6 +134,7 @@ FEDORA_PACKAGES=(
     grep
     gzip
     hostname
+    neovim
     ninja-build
     nodejs
     python-unversioned-command
@@ -175,6 +177,7 @@ ANDROID_PACKAGES=(
     gzip
     # hostname # no hostname
     # init
+    neovim
     ninja # ninja-build is not the right name
     nodejs
     # npm # include in "nodejs"
