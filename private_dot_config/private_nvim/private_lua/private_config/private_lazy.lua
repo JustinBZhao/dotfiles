@@ -21,10 +21,37 @@ vim.g.maplocalleader = "\\"
 
 -- Setup lazy.nvim
 require("lazy").setup({
-    spec = {
-        -- import your plgins
-        {},
+    {
+        'nvim-lualine/lualine.nvim',
+        dependencies = { 'nvim-tree/nvim-web-devicons' }
     },
+    {
+        'nvim-telescope/telescope.nvim', tag = '0.1.8',
+        dependencies = { 'nvim-lua/plenary.nvim' }
+    },
+    {
+        'nvim-neo-tree/neo-tree.nvim',
+        branch = 'v3.x',
+        dependencies = {
+            'nvim-lua/plenary.nvim',
+            'nvim-tree/nvim-web-devicons',
+            'MunifTanjim/nui.nvim',
+        }
+    },
+    -- The e-ink colorscheme, but does not work currently
+    -- {
+    --     'JWW127/theink',
+    --     lazy = false,
+    --     priority = 1000,
+    --     config = function()
+    --         vim.cmd("colorscheme theink")
+    --     end,
+    -- },
+    --
+    -- spec = {
+    --     -- import your plgins
+    --     { import = "plugins" },
+    -- },
     -- Configure any other settings here. See the documentation for more details.
     -- colorscheme that will be used when installing plugins.
     --install = { colorscheme = { "habamax" } },
