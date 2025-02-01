@@ -15,15 +15,16 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)  -- append to runtime path
 
--- Make sure to setup 'mapleader' and 'maplocalleader' before Loading lazy.nvim so that mappings are correct. This is also a good place to setup other settings (vim.opt)
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
-
 -- Setup lazy.nvim
 require("lazy").setup({
     {
         'nvim-lualine/lualine.nvim',
-        dependencies = { 'nvim-tree/nvim-web-devicons' }
+        dependencies = { 'nvim-tree/nvim-web-devicons' },
+        opts = {
+            options = {
+                theme = "papercolor_light",
+            },
+        },
     },
     {
         'nvim-telescope/telescope.nvim', tag = '0.1.8',
@@ -59,3 +60,12 @@ require("lazy").setup({
     -- automatically check for plugin updates
     checker = { enabled = true },
 })
+
+-- Make a light colorscheme on e-ink devices
+-- vim.opt.background = "light"
+
+-- Make the cursor black on white background?
+-- vim.opt.termguicolors = true
+-- vim.opt.guicursor = "n-v-c:block-Cursor/lCursor,i-ci-ve:ver25-CursorInsert/lCursorInsert,r-cr:hor20,sm:block"
+-- vim.cmd("highlight Cursor guifg=black guibg=#000000")
+-- vim.cmd("highlight CursorInsert guifg=black guibg=#000000")
