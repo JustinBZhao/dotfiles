@@ -7,6 +7,10 @@
     editor = vim
 	longpaths = true
     pager = delta
+[diff]
+    algorithm = histogram
+[help]
+    autocorrect = prompt
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
