@@ -1,6 +1,5 @@
 -- This is converted from the .vimrc file used in Vim
-require('core.options')
-require('core.keymaps')
+require('core')
 
 --lazy vim
 require('config.lazy')
