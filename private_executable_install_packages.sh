@@ -308,3 +308,7 @@ if [ "$os_name" != "Android" ]; then
         ln -s /usr/bin/batcat "$HOME/.local/bin/bat"
     fi
 fi
+
+# NeoVim setup (with NvChad)
+nvim --headless "+Lazy! sync" +qa
+nvim --headless "+MasonInstall clangd cmake-language-server pyright json-lsp bash-language-server shellcheck" +qa
