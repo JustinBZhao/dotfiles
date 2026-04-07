@@ -1,5 +1,5 @@
 .config/nvim/lua/core
 .config/nvim/lua/config
-.config/nvim/lua/plugins/apperance
+.config/nvim/lua/plugins/appearance
 .config/nvim/lua/plugins/navigation
 .config/nvim/lua/plugins/ui.lua
