@@ -312,3 +312,8 @@ fi
 # NeoVim setup (with NvChad)
 nvim --headless "+Lazy! sync" +qa
 nvim --headless "+MasonInstall clangd cmake-language-server pyright json-lsp bash-language-server shellcheck" +qa
+# Fix cmake-language-server bug (expects pygls < 2.0.0)
+CMAKE_LSP_VENV="$HOME/.local/share/nvim/mason/packages/cmake-language-server/venv"
+"$CMAKE_LSP_VENV/bin/python" -m pip install --upgrade --force-reinstall "pygls<2"
+# Install cmake linting
+python -m pip install --user cmakelint
