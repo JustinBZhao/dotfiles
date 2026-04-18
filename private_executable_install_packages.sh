@@ -5,56 +5,81 @@ set -euo pipefail
 
 command_exists() {
     # Can give multiple commands, will fail if any command is not found
-    command -v "$@" >/dev/null 2>&1
+    local cmd
+    for cmd in "$@"; do
+        command -v "$cmd" >/dev/null 2>&1 || return 1
+    done
+    return 0
 }
 
-# Find the OS name: Ubuntu, Fedora or Android
-# Could be android: os-release does not exist
-if [ ! -f "/etc/os-release" ]; then
-    echo "This is Android!"
-    os_name=Android
-else
-    os_name=$(grep "^NAME=" /etc/os-release | cut -d '=' -f2 | tr -d '"' | cut -d ' ' -f1)
-    case "$os_name" in
-        Ubuntu)
-            echo "This is Ubuntu!" ;;
-        Fedora)
-            echo "This is Fedora!" ;;
-        *)
-            echo "Unsupported Linux distribution!"
-            exit 1 ;;
-    esac
-fi
+detect_environment() {
+    DETECT_KIND="unknown"
+    DETECT_DISTRO="unknown"
+    DETECT_FAMILY="unknown"
+    DETECT_VERSION="unknown"
+    DETECT_HOST="unknown"
 
-# Check bash version, should >=4.2, otherwise abort
-# This does not work on Android Termux. Therefore, skip for Android
-if [ "$os_name" != "Android" ]; then
-    if (( BASH_VERSINFO[0] < 4 )); then
-        echo "Bash version too low! Must be at least 4.2!"
-        exit 1
-    fi
-    if (( BASH_VERSINFO[0] == 4 )) && (( BASH_VERSINFO[1] < 2 )); then
-        echo "Bash version too low! Must be at least 4.2!"
-        exit 1
-    fi
-fi
+    if [[ "${PREFIX:-}" == "/data/data/com.termux/files/usr" ]] || [[ -n "${TERMUX_VERSION:-}" ]]; then
+        DETECT_KIND="android"
+        DETECT_DISTRO="termux"
+        DETECT_FAMILY="android"
+        DETECT_VERSION="${TERMUX_VERSION:-unknown}"
+        DETECT_HOST="android"
 
-# Reject execution if run as root
-if [ "$(id -u)" -eq 0 ]; then
-    echo "This script cannot be run as root! Abort."
-    exit 1
-fi
+        echo "This is Android!"
+        return 0
+    fi
+
+    local os_release
+
+    if [[ -r /etc/os-release ]]; then
+        os_release="/etc/os-release"
+    elif [[ -r /usr/lib/os-release ]]; then
+        os_release="/usr/lib/os-release"
+    else
+        return 1
+    fi
+
+    source "$os_release"
+
+    DETECT_KIND="linux"
+    DETECT_DISTRO="${ID:-unknown}"
+    DETECT_VERSION="${VERSION_ID:-unknown}"
+    DETECT_FAMILY="${ID_LIKE:-${ID:-unknown}}"
+
+    # Check if it is a WSL distro
+    if grep -qiE '(microsoft|wsl)' /proc/version; then
+        DETECT_HOST="wsl"
+    else
+        DETECT_HOST="linux"
+    fi
+}
+
+check_bash_version() {
+    # Check bash version, should >=4.2, otherwise abort
+    # This does not work on Android Termux. Therefore, skip for Android
+    if [ "$DETECT_HOST" != "android" ]; then
+        if (( BASH_VERSINFO[0] < 4 )); then
+            echo "Bash version too low! Must be at least 4.2!"
+            exit 1
+        fi
+        if (( BASH_VERSINFO[0] == 4 )) && (( BASH_VERSINFO[1] < 2 )); then
+            echo "Bash version too low! Must be at least 4.2!"
+            exit 1
+        fi
+    fi
+}
 
 install_package_ubuntu() {
-    package=$1
+    local package=$1
     if ! dpkg -s "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        sudo apt install -y ${package} || { echo "Failed to install $package"; exit 1; }
+        sudo apt install -y "$package" || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
 install_package_fedora() {
-    package=$1
+    local package=$1
     if ! rpm -q "$package" >/dev/null 2>&1; then
         if ! dnf list --installed "$package" >/dev/null 2>&1; then
             echo "Installing $package..."
@@ -64,14 +89,32 @@ install_package_fedora() {
 }
 
 install_package_android() {
-    package=$1
+    local package=$1
     if ! dpkg -s "$package" >/dev/null 2>&1; then
         echo "Installing $package..."
-        apt install -y ${package} || { echo "Failed to install $package"; exit 1; }
+        apt install -y "$package" || { echo "Failed to install $package"; exit 1; }
     fi
 }
 
-PACKAGES=(
+
+detect_environment || {
+    echo "Could not detect environment"
+    exit 1
+}
+
+# Reject execution if run as root
+if [ "$(id -u)" -eq 0 ]; then
+    echo "This script cannot be run as root! Abort."
+    exit 1
+fi
+
+echo "Environment information:"
+echo "kind=$DETECT_KIND distro=$DETECT_DISTRO family=$DETECT_FAMILY version=$DETECT_VERSION host=$DETECT_HOST"
+
+check_bash_version
+
+
+UBUNTU_PACKAGES=(
     bat
     build-essential
     clang
@@ -94,6 +137,8 @@ PACKAGES=(
     ninja-build
     nodejs
     npm
+    python3
+    python3-pip
     python-is-python3
     python3-matplotlib
     python3-notebook
@@ -137,6 +182,8 @@ FEDORA_PACKAGES=(
     neovim
     ninja-build
     nodejs
+    python3
+    python3-pip
     python-unversioned-command
     python3-matplotlib
     python3-notebook
@@ -180,7 +227,8 @@ ANDROID_PACKAGES=(
     neovim
     ninja # ninja-build is not the right name
     nodejs
-    # npm # include in "nodejs"
+    # npm # included in "nodejs"
+    python
     # python-is-python # no need, "python" command already works
     # Python packages: need to install through pip
     # python3-matplotlib
@@ -200,15 +248,15 @@ ANDROID_PACKAGES=(
 )
 
 # Upgrade packages
-case "$os_name" in
-    Ubuntu)
-        sudo apt update || { echo "Failed to update package lists!"; exit 1; }
-        sudo apt upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
-    Fedora)
-        sudo dnf upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
-    Android)
-        apt update || { echo "Failed to update package lists!"; exit 1; }
-        apt upgrade || { echo "Failed to upgrade packages!"; exit 1; } ;;
+case "$DETECT_DISTRO" in
+    ubuntu)
+        sudo apt update -y || { echo "Failed to update package lists!"; exit 1; }
+        sudo apt upgrade -y || { echo "Failed to upgrade packages!"; exit 1; } ;;
+    fedora)
+        sudo dnf upgrade -y || { echo "Failed to upgrade packages!"; exit 1; } ;;
+    termux)
+        apt update -y || { echo "Failed to update package lists!"; exit 1; }
+        apt upgrade -y || { echo "Failed to upgrade packages!"; exit 1; } ;;
     *)
         echo "Unsupported Linux distribution!"
         exit 1 ;;
@@ -217,15 +265,15 @@ esac
 # Check if this is a WSL installation
 # Only install specific packages on full Ubuntu distribution
 echo "------------------------------------"
-if [ -v WSL_DISTRO_NAME ]; then
+if [[ "$DETECT_HOST" == "wsl" ]]; then
     echo "This is a WSL installation. Skipping some packages."
 else
     echo "This is a full installation. Install specific packages."
     for package in "${fulldistro_only_packages[@]}"; do
-        case "$os_name" in
-            Ubuntu)
+        case "$DETECT_DISTRO" in
+            ubuntu)
                 install_package_ubuntu "$package" ;;
-            Fedora)
+            fedora)
                 install_package_fedora "$package" ;;
         esac
     done
@@ -233,37 +281,36 @@ fi
 echo "------------------------------------"
 
 # Then install general packages
-echo "Installing general packages..."
-case "$os_name" in
-    Ubuntu)
-        for package in "${PACKAGES[@]}"; do
+echo "Installing general packages for ${DETECT_DISTRO}..."
+case "$DETECT_DISTRO" in
+    ubuntu)
+        for package in "${UBUNTU_PACKAGES[@]}"; do
             install_package_ubuntu "$package"
         done
         echo "------------------------------------"
         # Then install Ubuntu 24.04 specific packages
-        os_version=$(grep "^VERSION_ID=" /etc/os-release | cut -d '=' -f2 | tr -d '"')
-        if [ "$os_version" == "24.04" ]; then
+        if [ "$DETECT_VERSION" == "24.04" ]; then
             echo "Install Ubuntu 24.04 specific packages..."
             for package in "${ubuntu_2404_packages[@]}"; do
                 install_package_ubuntu "$package"
             done
         else
-            echo "This is an older Ubuntu version: ${os_version}. Skip installing version specific packages."
+            echo "This is an older Ubuntu version: ${DETECT_VERSION}. Skip installing version specific packages."
             fi ;;
-        Fedora)
-            for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
-                install_package_fedora "$package"
-            done ;;
-        Android)
-            for package in "${ANDROID_PACKAGES[@]}"; do
-                install_package_android "$package"
-            done ;;
-        *)
-            echo "Unsupported Linux distribution!"
-            exit 1 ;;
-    esac
-    echo "Package installation complete!"
-    echo "------------------------------------"
+    fedora)
+        for package in "${FEDORA_PACKAGES[@]}"; do # for fedora distributions
+            install_package_fedora "$package"
+        done ;;
+    termux)
+        for package in "${ANDROID_PACKAGES[@]}"; do
+            install_package_android "$package"
+        done ;;
+    *)
+        echo "Unsupported Linux distribution!"
+        exit 1 ;;
+esac
+echo "Package installation complete!"
+echo "------------------------------------"
 
 # Install Oh my Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -271,7 +318,7 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --keep-zshrc
     # Change default shell to zsh
     if command_exists chsh; then
-        chsh -s "$(which zsh)" || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
+        chsh -s "$(command -v zsh)" || { echo "Failed to change the default shell to zsh."; exit 1; } # it looks like setting default shell might not always succeed
     else
         echo "chsh command not found, cannot change default shell to zsh!"
     fi
@@ -302,7 +349,7 @@ echo "------------------------------------"
 
 # Create symlink for "bat"
 # Not needed for Android Termux
-if [ "$os_name" != "Android" ]; then
+if [ "$DETECT_DISTRO" != "termux" ]; then
     if [ -f "/usr/bin/batcat" ] && [ ! -f "$HOME/.local/bin/bat" ]; then
         mkdir -p "$HOME/.local/bin"
         ln -s /usr/bin/batcat "$HOME/.local/bin/bat"
@@ -310,10 +357,85 @@ if [ "$os_name" != "Android" ]; then
 fi
 
 # NeoVim setup (with NvChad)
-nvim --headless "+Lazy! sync" +qa
-nvim --headless "+MasonInstall clangd cmake-language-server pyright json-lsp bash-language-server shellcheck" +qa
+echo "NeoVim: Install Lazy packages and Mason language servers..."
+if ! lazy_output=$(nvim --headless +'lua require("lazy").sync({ show = false, wait = true })' +qa 2>&1); then
+    echo "NeoVim Lazy update failed; see output:"
+    echo "$lazy_output"
+    exit 1
+else
+    echo "NeoVim Lazy update finished without problems!"
+fi
+# Install language servers with Mason if not installed
+nvim --headless +'lua
+local ok_lazy, lazy = pcall(require, "lazy")
+assert(ok_lazy, "lazy.nvim is not available")
+lazy.load({ plugins = { "mason.nvim" }})
+local registry = require("mason-registry")
+
+registry.refresh()
+
+local wanted = {
+"clangd",
+"cmake-language-server",
+"pyright",
+"json-lsp",
+"bash-language-server",
+"shellcheck",
+}
+
+local pending = 0
+local failed = false
+
+local function maybe_exit()
+    if pending == 0 then
+        vim.schedule(function()
+            if failed then
+                vim.cmd("cquit 1")
+            else
+                vim.cmd("qa")
+            end
+        end)
+    end
+end
+
+local function log(msg)
+    io.stdout:write(msg .. "\n")
+    io.stdout:flush()
+end
+
+for _, name in ipairs(wanted) do
+    if not registry.has_package(name) then
+        log("Unknown Mason package: " .. name)
+        failed = true
+    elseif registry.is_installed(name) then
+        log("Already installed: " .. name)
+    else
+        local pkg = registry.get_package(name)
+        log("Installing " .. name)
+        pending = pending + 1
+
+        pkg:install({}, vim.schedule_wrap(function(success, result)
+            if success then
+                log("Installed " .. name)
+            else
+                failed = true
+                log("Failed to install " .. name .. ": " .. tostring(result))
+            end
+            pending = pending - 1
+            maybe_exit()
+        end))
+    end
+end
+
+maybe_exit()
+'
 # Fix cmake-language-server bug (expects pygls < 2.0.0)
 CMAKE_LSP_VENV="$HOME/.local/share/nvim/mason/packages/cmake-language-server/venv"
-"$CMAKE_LSP_VENV/bin/python" -m pip install --upgrade --force-reinstall "pygls<2"
+CMAKE_LSP_PY="$CMAKE_LSP_VENV/bin/python"
+if "$CMAKE_LSP_PY" -c 'from importlib.metadata import version; import sys; sys.exit(0 if int(version("pygls").split(".",1)[0]) >= 2 else 1)'; then
+    "$CMAKE_LSP_PY" -m pip install --upgrade --force-reinstall "pygls<2"
+    echo "To fix cmake lsp in NeoVim, downgraded pygls to 1.x"
+fi
 # Install cmake linting
 python -m pip install --user cmakelint
+echo "Done"
